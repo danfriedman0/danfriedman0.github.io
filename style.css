@@ -7,6 +7,16 @@ body {
 	color: #555;
 }
 
+@media screen and (max-width: 425px) {
+	body {
+		padding: 1em;
+	}
+	h1,
+	nav {
+		margin: 0 auto;
+	}
+}
+
 h1,
 h2,
 strong {
@@ -42,14 +52,13 @@ pre {
 	border-left: 2px solid #69c;
 }
 
-p {
-	flex: 1;
-}
-
 .flex-justify {
+	display: -webkit-flex;
 	display: flex;
+	-webkit-justify-content: space-between;
 	justify-content: space-between;
 	align-items: center;
+	-webkit-flex-wrap: wrap;
 	flex-wrap: wrap;
 }
 
@@ -61,6 +70,21 @@ p {
 	margin-right: 0;
 }
 
+@media screen and (max-width: 425px) {
+	.img-wrapper {
+		margin: 1em auto;
+	}
+}
+
+p {
+	flex: 1;
+}
+
+@media screen and (max-width: 425px) {
+	p {
+		flex-basis: 100%;
+	}	
+}
 
 
 
