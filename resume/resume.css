@@ -13,7 +13,7 @@ body {
 }
 
 .content {
-	margin: 1in;
+	margin: .5in 1in;
 }
 
 @media screen and (max-width: 8.5in) {
