@@ -3,70 +3,79 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Dan Friedman</title>
-	<link href="https://fonts.googleapis.com/css?family=Mada" rel="stylesheet">
+	<title>Dan Friedman Website</title>
 	<link href="style.css" rel="stylesheet">
-	<link rel="shortcut icon" href="/favicon.ico?" type="image/x-icon">
 </head>
 
 <body>
-	<header class="flex-justify">
 		<h1>Dan Friedman</h1>
-		<nav class="menu-top flex-justify">
-			<a href="resume/resume.html" class="flex-item">Resume</a>
-			<a href="https://www.github.com/danfriedman0" class="flex-item">GitHub</a>
-			<a href="https://www.linkedin.com/in/dan-friedman-4464669a" class="flex-item">LinkedIn</a>
-		</nav>
-	</header>
+        <img src="profile.png" width="200" height="200">
+    <p>
+      I'm a first-year PhD student in the
+      <a href="https://nlp.cs.princeton.edu/">Princeton NLP group</a>,
+      working with
+      <a href="https://www.cs.princeton.edu/~danqic/">Danqi Chen</a>.
+      Before this I was a software engineer at Google and IBM,
+      and before that I was an undergraduate at Yale where I worked
+      with <a href="https://bobfrank1.github.io/">Bob Frank</a> and
+      <a href="http://www.cs.yale.edu/homes/radev/">Dragomir Radev</a>.
+      I'm interested in natural language understanding 🤖.
+    </p>
+    <p>
+      I am on <a href="https://github.com/danfriedman0">GitHub</a> and
+      <a href="email.png">email</a>.
+    </p>
 
-	<section class="flex-justify">
-		<div class="img-wrapper flex-item">
-			<img src="profile.png" width="200" height="200">
-		</div>
-		<p class="flex-item">Hi, I'm Dan Friedman. I'm a senior at Yale University. I put together this website to showcase some of the things I've been working on, mostly JavaScript web applications for doing interesting things with the browser. You can also look at my resume, <a href="resume/resume.pdf">as a PDF</a> or <a href="resume/resume.html">in HTML.</a></p>
-	</section>
+    <h2>Publications</h2>
+    <ul>
+      <li>
+        <a href="https://www.aclweb.org/anthology/N19-1075.pdf">
+          Syntax-aware Neural Semantic Role Labeling with Supertags
+        </a>
+        <br>
+        Jungo Kasai, <strong>Dan Friedman</strong>, Robert Frank,
+        Dragomir Radev, Owen Rambow
+        <br>
+        <em>
+          Proceedings of the 2019 Conference of the North American
+          Chapter of the Association for Computational Linguistics:
+          Human Language Technologies
+        </em> (2019)
+      </li> 
+      <li>
+        <a href="https://arxiv.org/pdf/1909.01716.pdf">
+          ScisummNet: A Large Annotated Corpus and Content-Impact
+          Models for Scientific Paper Summarization with Citation
+          Networks
+        </a>
+        <br>
+        Michihiro Yasunaga, Jungo Kasai, Rui Zhang, Alexander R
+        Fabbri, Irene Li, <strong>Dan Friedman</strong>, Dragomir R
+        Radev
+        <br>
+        <em>
+          Proceedings of the AAAI Conference on Artificial Intelligence 33
+        </em> (2019)
+      </li>
+      <li>
+        <a href="https://www.aclweb.org/anthology/W17-6213.pdf">
+          Linguistically Rich Vector Representations of Supertags for
+          TAG Parsing
+        </a>
+        <br>
+        <strong>Dan Friedman</strong><sup>*</sup>, Jungo
+        Kasai<sup>*</sup>, R Thomas McCoy<sup>*</sup>, Robert Frank,
+        Forrest Davis, Owen Rambow
+        <br>
+        <em>
+          Proceedings of the 13th International Workshop on Tree Adjoining
+          Grammars and Related Formalisms
+        </em> (2017)
+      </li>
+    </ul>
 
-	<section>
-		<article>
-			<h2>Kineograph</h2>
-			
-			<p>Kineograph is a JavaScript web app for making flipbook-style animations in the browser. I used to do some animation with Adobe Flash but my access code expired and Flash is on its way out anyway, so I wrote Kineograph as a kind of replacement. Kineograph supports onion-skinning and layers, so you can actually make fairly sophisticated animations if you're interested and then export your animation as a gif.</p>
-
-			<p>I wrote Kineograph in JavaScript/JQuery using the HTML Canvas API. You can play with Kineograph <a href="/kineograph">here</a> and look at the source code <a href="https://github.com/danfriedman0/kineograph">on GitHub</a>.</p>
-		</article>
-
-		<article>
-			<h2>turnStyle</h2>
-			
-			<p>turnStyle is a Google Chrome extension that lets you override websites with your own style rules. You can write your own CSS in the extension popup or in a style manager and then save your rules and apply them to any website. turnStyle saves your settings in Chrome storage, so your settings are synchronized across all your devices. I made the extension because I use a bunch of websites written in unformatted HTML, which is not very easy to read (e.g., <a href="http://shakespeare.mit.edu/pericles/full.html">this</a>). turnStyle makes it easy to add basic styles that make those sites more readable. It's also a good way to hide content you find noxious (<code>.noxious-content { display: none !important; }</code>). I think turnStyle can have accessibility applications, too, for increasing text size or making websites high-contrast.</p>
-
-			<p>I wrote turnStyle in Vanilla JS. It's in the <a href="https://chrome.google.com/webstore/detail/turnstyle/mcclmlgcklibbacamgggjlllfcpodaij">Chrome Web Store</a> and the source code is <a href="https://github.com/danfriedman0/turnStyle">on GitHub.</a>
-		</article>
-
-		<article>
-			<h2>Game of Life</h2>
-			
-			<p>Conway's Game of Life is a classic example of artificial life. The game board is a two-dimensional grid which represents a field of cells, each of which is either alive or dead (or populated or unpopulated). Every time step, a simple set of rules determines which cells live, die, or come to life. All sorts of interesting patterns emerge when you let it run. You can read more about it on <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Wikipedia</a>.</p>
-
-			<p>I wrote a simple, interactive implementation of the Game of Life in Vanilla JS. You can play with it <a href="/gameOfLife">here</a> and check out the source code on <a href="https://github.com/danfriedman0/gameOfLife">GitHub</a>. Just enter an initial pattern and watch it go! As a bonus, this Game of Life is <em>responsive</em>, so you can use it on your phone.</p>
-		</article>
-
-		<article>
-			<h2>imageMapWrapper</h2>
-
-			<p>imageMapWrapper is a JQuery plug-in that adds some functionality to HTML image maps. For example, it makes image maps responsive and it lets you highlight different areas. I built a "view from your section" tool for the <a href="http://kentuckycenter.org">Kentucky Center for the Performing Arts</a>, to map photographs to seatmaps. I couldn't find a plug-in I liked so I made this one.</p>
-
-			<p>imageMapWrapper uses the HTML Canvas API. There's a little demo <a href="/imageMapWrapper">here</a> and the source code is <a href="https://github.com/danfriedman0/imageMapWrapper">on GitHub</a>.</p>
-		</article>
-
-		<hr>
-
-		<article>
-			<p>There are some other small projects on my <a href="https://github.com/danfriedman0">GitHub page</a>.</p>
-		</article>
-
-	</section>
-
+    <h2>Other</h2> Make an animation
+    with <a href="https://danfriedman0.github.io/kineograph/">Kineograph</a>.
 </body>
 
 </html>
