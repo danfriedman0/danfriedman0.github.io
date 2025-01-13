@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Ant Colony Simulation</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            background: #f0f0f0;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #ffffff;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="antCanvas" width="600" height="400"></canvas>
+    <script>
+        // Constants
+        const CANVAS_WIDTH = 600;
+        const CANVAS_HEIGHT = 400;
+        const ANT_SIZE = 4;
+        const NEST_SIZE = 32;
+        const FOOD_SIZE = 16;
+        const PHEROMONE_DECAY_RATE = 0.997;
+        const PHEROMONE_DEPOSIT_AMOUNT = 0.1;
+        const SENSOR_ANGLE = Math.PI / 4;  // 45 degrees
+        const SENSOR_DISTANCE = 10;
+        const RANDOM_MOVEMENT_CHANCE = 0.2;
+        const MAX_FORAGING_STEPS = 300;
+        const NUM_ANTS = 50;
+        const FOOD_DECREMENT_AMOUNT = 0.2;
+        const NUM_FOOD = 3;
+
+        // Canvas setup
+        const canvas = document.getElementById('antCanvas');
+        const ctx = canvas.getContext('2d');
+
+        var seed = 5;
+        function random() {
+            var x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
+        }
+
+        // Environment class to manage the simulation space
+        class Environment {
+            constructor() {
+                this.ants = [];
+                this.food = [];
+                this.walls = [];
+                this.pheromoneGrid = this.createPheromoneGrid();
+                this.nest = { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2 };
+            }
+
+            createPheromoneGrid() {
+                const grid = Array(CANVAS_WIDTH);
+                for (let x = 0; x < CANVAS_WIDTH; x++) {
+                    grid[x] = Array(CANVAS_HEIGHT).fill(0);
+                }
+                return grid;
+            }
+
+            depositPheromone(x, y, amount) {
+                x = Math.floor(x);
+                y = Math.floor(y);
+                if (x >= 0 && x < CANVAS_WIDTH && y >= 0 && y < CANVAS_HEIGHT) {
+                    this.pheromoneGrid[x][y] += amount;
+                }
+            }
+
+            getPheromoneAt(x, y) {
+                x = Math.floor(x);
+                y = Math.floor(y);
+                if (x >= 0 && x < CANVAS_WIDTH && y >= 0 && y < CANVAS_HEIGHT) {
+                    return this.pheromoneGrid[x][y];
+                }
+                return 0;
+            }
+
+            update() {
+                // Update pheromone trails
+                for (let x = 0; x < CANVAS_WIDTH; x++) {
+                    for (let y = 0; y < CANVAS_HEIGHT; y++) {
+                        if (this.pheromoneGrid[x][y] > 0) {
+                            this.pheromoneGrid[x][y] *= PHEROMONE_DECAY_RATE;
+                            if (this.pheromoneGrid[x][y] < 0.01) {
+                                this.pheromoneGrid[x][y] = 0;
+                            }
+                        }
+                    }
+                }
+
+                // Update ants
+                this.ants.forEach(ant => ant.update(this));
+
+                // Delete empty food
+                this.food = this.food.filter((food) => food.size > 0);
+            }
+
+            draw() {
+                // Clear canvas
+                ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+                // Draw pheromone trails
+                for (let x = 0; x < CANVAS_WIDTH; x++) {
+                    for (let y = 0; y < CANVAS_HEIGHT; y++) {
+                        if (this.pheromoneGrid[x][y] > 0) {
+                            const intensity = Math.min(this.pheromoneGrid[x][y] * 255, 255);
+                            ctx.fillStyle = `rgba(0, 0, 255, ${intensity / 255})`;
+                            ctx.fillRect(x, y, 1, 1);
+                        }
+                    }
+                }
+
+                // Draw nest
+                ctx.fillStyle = 'blue';
+                ctx.beginPath();
+                ctx.arc(this.nest.x, this.nest.y, NEST_SIZE, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw food
+                ctx.fillStyle = 'red';
+                this.food.forEach(food => {
+                    ctx.beginPath();
+                    ctx.arc(food.x, food.y, food.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                // Draw ants
+                this.ants.forEach(ant => {
+                    // ctx.fillStyle = ant.hasFood ? 'purple' : 'black';
+                    ctx.fillStyle = ant.hasFood ? 'red' : 'black';
+                    ctx.save();
+                    ctx.translate(ant.x, ant.y);
+                    ctx.rotate(ant.angle);
+                    ctx.fillRect(-ANT_SIZE / 2, -ANT_SIZE / 2, ANT_SIZE, ANT_SIZE);
+                    ctx.restore();
+                });
+            }
+        }
+
+        // Food class to represent a food source
+        class Food {
+            constructor(x, y, size) {
+                this.x = x;
+                this.y = y;
+                this.size = size;
+            }
+
+            decrement() {
+                this.size = Math.max(0, this.size - FOOD_DECREMENT_AMOUNT);
+            }
+        }
+
+        // Ant class to represent individual ants
+        class Ant {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.angle = random() * Math.PI * 2;
+                this.speed = 1;
+                this.hasFood = false;
+                this.baseForagingSteps = Math.floor(random() * MAX_FORAGING_STEPS / 5);
+                this.foragingSteps = this.baseForagingSteps;
+            }
+
+            resetSteps() {
+                this.foragingSteps = this.baseForagingSteps;
+            }
+
+            senseArea(env, angle) {
+                const sensorX = this.x + Math.cos(this.angle + angle) * SENSOR_DISTANCE;
+                const sensorY = this.y + Math.sin(this.angle + angle) * SENSOR_DISTANCE;
+                return env.getPheromoneAt(sensorX, sensorY);
+            }
+
+            senseFood(env, angle) {
+                const sensorX = this.x + Math.cos(this.angle + angle) * SENSOR_DISTANCE;
+                const sensorY = this.y + Math.sin(this.angle + angle) * SENSOR_DISTANCE;
+                for (const food of env.food) {
+                    const dx = food.x - sensorX;
+                    const dy = food.y - sensorY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance <= food.size) {
+                        return true;
+                    }
+                }
+            }
+
+            update(env) {
+                // Check for nest
+                const dx = env.nest.x - this.x;
+                const dy = env.nest.y - this.y;
+                const distanceToNest = Math.sqrt(dx * dx + dy * dy);
+                var inNest = false;
+                if (distanceToNest <= NEST_SIZE && (this.hasFood || this.foragingSteps >= MAX_FORAGING_STEPS)) {
+                    inNest = true;
+                    if (this.hasFood) {
+                        this.angle += Math.PI;  // Turn around if had food
+                        this.hasFood = false;
+                    } else {
+                        this.angle += Math.PI + (random() - 0.5) * 3  // * 0.5;
+                    }
+                    this.resetSteps();  // Reset foraging steps.
+                }
+
+                // // If right in the middle of the nest, turn in a random direction.
+                // if (distanceToNest <= NEST_SIZE * 0.2) {
+                //     this.angle = random() * Math.PI * 2;
+                // }
+
+
+                // Deposit pheromones
+                // if (!inNest && (this.hasFood || this.foragingSteps <= MAX_FORAGING_STEPS)) {
+                if (!inNest && this.foragingSteps <= MAX_FORAGING_STEPS) {
+                    env.depositPheromone(this.x, this.y, PHEROMONE_DEPOSIT_AMOUNT * (1 + 10 * this.hasFood));
+                }
+
+                // Random movement chance
+                // if (!this.hasFood && random() < RANDOM_MOVEMENT_CHANCE) {
+                if (random() < RANDOM_MOVEMENT_CHANCE) {
+                    // # this.angle += (random() - 0.5) * 0.5;
+                    this.angle += (random() - 0.5) * 0.3;
+                } else if (false) {
+                    // Check pheromone levels at three positions (left, center, right)
+                    const leftPheromone = 1 + this.senseArea(env, -SENSOR_ANGLE);
+                    const centerPheromone = 2 + this.senseArea(env, 0);
+                    const rightPheromone = 1 + this.senseArea(env, SENSOR_ANGLE);
+
+                    // Weighted sample
+                    const leftWeight = leftPheromone / (leftPheromone + centerPheromone + rightPheromone);
+                    const centerWeight = centerPheromone / (leftPheromone + centerPheromone + rightPheromone);
+                    const rightWeight = rightPheromone / (leftPheromone + centerPheromone + rightPheromone);
+                    const r = random();
+                    if (r < leftWeight) {
+                        this.angle -= 0.1;  // Turn left
+                    } else if (r < leftWeight + centerWeight) {
+                        // Continue straight
+                    } else {
+                        this.angle += 0.1;  // Turn right
+                    }
+                } else {
+                    // Check for food at three positions (left, center, right)
+                    const leftFood = this.senseFood(env, -SENSOR_ANGLE);
+                    const centerFood = this.senseFood(env, 0);
+                    const rightFood = this.senseFood(env, SENSOR_ANGLE);
+
+                    // Choose direction based on 1) food, 2) pheromone levels
+                    if (!this.hasFood && centerFood) {
+                        // Continue straight
+                    } else if (!this.hasFood && leftFood) {
+                        this.angle -= 0.1;  // Turn left
+                    } else if (!this.hasFood && rightFood) {
+                        this.angle += 0.1;  // Turn left
+                    }
+
+                    // // Check pheromone levels at three positions (left, center, right)
+                    // const leftPheromone = 0.1 + this.senseArea(env, -SENSOR_ANGLE);
+                    // const centerPheromone = 1 + this.senseArea(env, 0);
+                    // const rightPheromone = 0.1 + this.senseArea(env, SENSOR_ANGLE);
+
+                    // // Weighted sample
+                    // const leftWeight = leftPheromone / (leftPheromone + centerPheromone + rightPheromone);
+                    // const centerWeight = centerPheromone / (leftPheromone + centerPheromone + rightPheromone);
+                    // const rightWeight = rightPheromone / (leftPheromone + centerPheromone + rightPheromone);
+                    // const r = random();
+                    // if (r < leftWeight) {
+                    //     this.angle -= 0.1;  // Turn left
+                    // } else if (r < leftWeight + centerWeight) {
+                    //     // Continue straight
+                    // } else {
+                    //     this.angle += 0.1;  // Turn right
+                    // }
+
+                    const leftPheromone = this.senseArea(env, -SENSOR_ANGLE);
+                    const centerPheromone = this.senseArea(env, 0);
+                    const rightPheromone = this.senseArea(env, SENSOR_ANGLE);
+
+                    if (centerPheromone > leftPheromone && centerPheromone > rightPheromone) {
+                        // Continue straight
+                    } else if (leftPheromone > rightPheromone) {
+                        this.angle -= 0.1;  // Turn left
+                    } else if (rightPheromone > leftPheromone) {
+                        this.angle += 0.1;  // Turn right
+                    }
+                }
+
+                // Move
+                this.x += Math.cos(this.angle) * this.speed;
+                this.y += Math.sin(this.angle) * this.speed;
+                this.foragingSteps += 1;
+
+                // // If ant hit a wall and doesn't have food, stop leaving trail
+                // if (!this.hasFood && (this.x < 0 || this.x >= CANVAS_WIDTH || this.y <= 0 || this.y >= CANVAS_HEIGHT)) {
+                //     this.foragingSteps = MAX_FORAGING_STEPS + 1;
+                // }
+
+                // Keep within bounds
+                // const r = (random() - 0.5) * 0.5;
+                const r = 0;
+                if (this.x < 0) { this.x = 0; this.angle = Math.PI - this.angle + r; }
+                if (this.x >= CANVAS_WIDTH) { this.x = CANVAS_WIDTH - 1; this.angle = Math.PI - this.angle + r; }
+                if (this.y < 0) { this.y = 0; this.angle = -this.angle + r; }
+                if (this.y >= CANVAS_HEIGHT) { this.y = CANVAS_HEIGHT - 1; this.angle = -this.angle + r; }
+
+                // Check for food
+                env.food.forEach(food => {
+                    const dx = food.x - this.x;
+                    const dy = food.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance <= food.size) {
+                        if (!this.hasFood) {
+                            food.decrement();  // Eat some of the food
+                            this.resetSteps();  // Reset foraging steps
+                            this.hasFood = true;
+                            this.angle += Math.PI;  // Turn around
+                        }
+                    }
+                });
+
+
+                // Check if done foraging
+                if (this.foragingSteps == MAX_FORAGING_STEPS && !this.hasFood) {
+                    this.angle += Math.PI;  // Turn around
+                }
+            }
+        }
+
+        // Create environment and add some initial ants
+        const env = new Environment();
+        for (let i = 0; i < NUM_ANTS; i++) {
+            env.ants.push(new Ant(env.nest.x, env.nest.y));
+        }
+
+        // Add some food
+        for (let i = 0; i < NUM_FOOD; i++) {
+            const angle = random() * Math.PI * 2;
+            const xInit = env.nest.x + Math.cos(angle) * random() * CANVAS_WIDTH / 2;
+            const x = Math.max(0, Math.min(xInit, CANVAS_WIDTH - 1));
+            const yInit = env.nest.y + Math.sin(angle) * random() * CANVAS_HEIGHT / 2;
+            const y = Math.max(0, Math.min(yInit, CANVAS_HEIGHT - 1));
+            const size = 0.5 * FOOD_SIZE + random() * FOOD_SIZE
+            env.food.push(new Food(x, y, size));
+        }
+        // env.food.push(new Food(100, 100, FOOD_SIZE));
+        // env.food.push(new Food(500, 300, FOOD_SIZE));
+
+        function addFood(canvas, event) {
+            const rect = canvas.getBoundingClientRect()
+            const x = event.clientX - rect.left
+            const y = event.clientY - rect.top
+            env.food.push(new Food(x, y, FOOD_SIZE));
+        }
+
+        canvas.addEventListener('mousedown', function (e) {
+            addFood(canvas, e)
+        })
+
+        // Animation loop
+        function animate() {
+            env.update();
+            env.draw();
+            requestAnimationFrame(animate);
+        }
+
+        // Start the simulation
+        animate();
+    </script>
+</body>
+
+</html>
