@@ -11,6 +11,7 @@
 
         body {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
@@ -21,7 +22,21 @@
 </head>
 
 <body>
-    <canvas id="antCanvas" width="600" height="400"></canvas>
+    <div>
+        <canvas id="antCanvas" width="600" height="400"></canvas>
+    </div>
+    <div id="buttons">
+        <button type="button" id="pause">Pause</button>
+        <button type="button" id="reset">Reset</button>
+        <label for="number">Number of ants:</label>
+        <input type="number" id="number" name="number" min="1" max="500" value="50" />
+    </div>
+    <p>
+        <bold>Ants</bold> leave the <bold style="color:blue">nest</bold>
+        looking for <bold style="color:red">food</bold>.
+        They leave behind <bold style="color:violet">pheromone trails</bold> to find their way.
+    </p>
+    <p>Click anywhere to add more food.</p>
     <script>
         // Constants
         const CANVAS_WIDTH = 600;
@@ -57,6 +72,8 @@
                 this.walls = [];
                 this.pheromoneGrid = this.createPheromoneGrid();
                 this.nest = { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2 };
+                this.paused = false;
+                this.numAnts = NUM_ANTS;
             }
 
             createPheromoneGrid() {
@@ -113,7 +130,7 @@
                     for (let y = 0; y < CANVAS_HEIGHT; y++) {
                         if (this.pheromoneGrid[x][y] > 0) {
                             const intensity = Math.min(this.pheromoneGrid[x][y] * 255, 255);
-                            ctx.fillStyle = `rgba(0, 0, 255, ${intensity / 255})`;
+                            ctx.fillStyle = `rgba(143, 0, 255, ${intensity / 255})`;
                             ctx.fillRect(x, y, 1, 1);
                         }
                     }
@@ -143,6 +160,48 @@
                     ctx.fillRect(-ANT_SIZE / 2, -ANT_SIZE / 2, ANT_SIZE, ANT_SIZE);
                     ctx.restore();
                 });
+            }
+
+            setNumAnts(n) {
+                this.numAnts = n;
+                if (n < this.ants.length) {
+                    this.ants = this.ants.slice(0, n);
+                } else {
+                    while (this.ants.length < n) {
+                        this.ants.push(new Ant(this.nest.x, this.nest.y));
+                    }
+                }
+                this.draw();
+            }
+
+            init() {
+                this.ants = [];
+                this.food = [];
+                this.pheromoneGrid = this.createPheromoneGrid();
+                for (let i = 0; i < this.numAnts; i++) {
+                    this.ants.push(new Ant(this.nest.x, this.nest.y));
+                }
+
+                // Add some food
+                for (let i = 0; i < NUM_FOOD; i++) {
+                    const angle = random() * Math.PI * 2;
+                    const xInit = this.nest.x + Math.cos(angle) * random() * CANVAS_WIDTH / 2;
+                    const x = Math.max(0, Math.min(xInit, CANVAS_WIDTH - 1));
+                    const yInit = this.nest.y + Math.sin(angle) * random() * CANVAS_HEIGHT / 2;
+                    const y = Math.max(0, Math.min(yInit, CANVAS_HEIGHT - 1));
+                    const size = 0.5 * FOOD_SIZE + random() * FOOD_SIZE
+                    this.food.push(new Food(x, y, size));
+                }
+                // env.food.push(new Food(100, 100, FOOD_SIZE));
+                // env.food.push(new Food(500, 300, FOOD_SIZE));
+
+            }
+
+            addFood(canvas, event) {
+                const rect = canvas.getBoundingClientRect()
+                const x = event.clientX - rect.left
+                const y = event.clientY - rect.top
+                this.food.push(new Food(x, y, FOOD_SIZE));
             }
         }
 
@@ -320,8 +379,8 @@
                             food.decrement();  // Eat some of the food
                             this.resetSteps();  // Reset foraging steps
                             this.hasFood = true;
-                            this.angle += Math.PI;  // Turn around
                         }
+                        this.angle += Math.PI;  // Turn around
                     }
                 });
 
@@ -333,40 +392,47 @@
             }
         }
 
+
         // Create environment and add some initial ants
         const env = new Environment();
-        for (let i = 0; i < NUM_ANTS; i++) {
-            env.ants.push(new Ant(env.nest.x, env.nest.y));
-        }
-
-        // Add some food
-        for (let i = 0; i < NUM_FOOD; i++) {
-            const angle = random() * Math.PI * 2;
-            const xInit = env.nest.x + Math.cos(angle) * random() * CANVAS_WIDTH / 2;
-            const x = Math.max(0, Math.min(xInit, CANVAS_WIDTH - 1));
-            const yInit = env.nest.y + Math.sin(angle) * random() * CANVAS_HEIGHT / 2;
-            const y = Math.max(0, Math.min(yInit, CANVAS_HEIGHT - 1));
-            const size = 0.5 * FOOD_SIZE + random() * FOOD_SIZE
-            env.food.push(new Food(x, y, size));
-        }
-        // env.food.push(new Food(100, 100, FOOD_SIZE));
-        // env.food.push(new Food(500, 300, FOOD_SIZE));
-
-        function addFood(canvas, event) {
-            const rect = canvas.getBoundingClientRect()
-            const x = event.clientX - rect.left
-            const y = event.clientY - rect.top
-            env.food.push(new Food(x, y, FOOD_SIZE));
-        }
+        env.init();
 
         canvas.addEventListener('mousedown', function (e) {
-            addFood(canvas, e)
-        })
+            env.addFood(canvas, e)
+        });
+
+        const pauseButton = document.getElementById("pause");
+        pauseButton.addEventListener("click", function (e) {
+            if (env.paused) {
+                env.paused = false;
+                pauseButton.innerHTML = "Pause";
+            } else {
+                env.paused = true;
+                pauseButton.innerHTML = "Resume";
+            }
+        });
+
+        const numberButton = document.getElementById("number");
+
+        numberButton.addEventListener("change", function (e) {
+            env.setNumAnts(e.target.value);
+        });
+
+        document.getElementById("reset").addEventListener("click", function (e) {
+            numberButton.value = NUM_ANTS;
+            env.init();
+            env.draw();
+        });
+
+
+
 
         // Animation loop
         function animate() {
-            env.update();
-            env.draw();
+            if (!env.paused) {
+                env.update();
+                env.draw();
+            }
             requestAnimationFrame(animate);
         }
 
